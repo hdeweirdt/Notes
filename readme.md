@@ -1,3 +1,3 @@
 # Personal Notes
 
-For use with the [Obsidian](www.obsidian.md) note-taking software.
+For use with the [Obsidian](https://obsidian.md/) note-taking software.
