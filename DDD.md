@@ -1,8 +1,6 @@
-# Wat is het
+# Begrippen
 
-## Building Blocks
-
-### Entities
+## Entities
 Entities zijn objecten binnen het domein met volgende eigenschappen
 - Ze hebben een identiteit die hen definieert en hen onderscheidbaar maakt van andere objecten
 - Die identiteit blijft dezelfde gedurende hun volledige levensduur
@@ -19,7 +17,7 @@ Een entiteit bevat best enkel attributen en gedrag die essentieel zijn voor zijn
 
 Een entiteit is ook verantwoordelijk voor alle operaties op zowel zichzelf als de objecten die hij bezit. Het doel is om de entiteit altijd in een consistente staat te houden. Dit komt overeen met *encapsulatie* binnen OO.
 	
-### Value Objects
+## Value Objects
 Value objects zijn objecten die voorkomen als attributen van entiteiten of andere value objects binnen het domein. Ze hebben volgende eigenschappen:
 - Ze worden gedefinieerd volgens hun waarde, niet hun identiteit (want die hebben ze niet). Dit is het omgekeerde van [[#Entities]].
 - Ze zijn immutable.
@@ -33,6 +31,9 @@ Een value object is niet zomaar een verzameling attributen, maar stelt een coher
 ### Aggregates
 Aggregates zijn conceptuele opdelingen van de objecten binnen het model. Ze geven een eenheid van verandering aan: alle objecten binnen een aggregate worden tijdens aanpassingen als een geheel aanzien. Zo is men gegarandeerd dat objecten binnen een aggregate altijd voldoen aan de opgelegde business rules.
 
+Aggregates duiden dus *transactional boundaries* aan. Hoewel transacties vaak als een technisch concept aanzien worden gaat het hier in se meer over men kan garanderen dat de business invariants na elke business operatie gerespecteerd blijven.
+Het is dus aan business om de boundaries aan te duiden, aangezien zij bepalen wat geldige toestanden van het systeem zijn.
+
 Een aggregate heeft volgende eigenschappen:
 - Elke aggregate heeft een boundary en een root ^root-entity
 	- De root is een enkele specifieke entiteit binnen de aggregate
@@ -40,14 +41,17 @@ Een aggregate heeft volgende eigenschappen:
 	- De root heeft dus (op zijn minst) een [[#^globally-unique-id]]
 	- Andere entiteiten binnen de aggregate hebben een [[#^locally-unique-id]]
 	- De root mag referenties naar interne entiteiten doorsturen naar andere objecten, maar die referenties zijn *transient*: ze mogen niet bijgehouden worden
-	- De root mag referenties naar value objectes doorgeven naar andere objecten
+	- De root mag referenties naar value objectes doorgeven naar andere objecten. Door enkel referenties mee te geven dwingen we ook af dat aanpassingen aan objecten binnen de aggregate via de root moeten gebeuren.
 - Alle toegang tot objecten binnen de aggregate verlopen via de root
 - Invarianten tussen delen van de aggregate moeten altijd gerespecteerd worden binnen elke transactie -> *strict consistency*
 - Objecten binnen een aggregate mogen referenties bevatten naar andere aggregates
 
+Aggregates modelleer je best zo klein mogelijk om uiteindelijk geheugengebruik en kans op succes bij het uitvoeren van transacties te verhogen. 
+Door aggregates klein te houden volg je ook het Single Responsibility Pattern meer, wat tot een eenvoudiger te begrijpen en gebruiken resultaat zal leiden.
+
 Vaak vallen de begrippen [[#^root-entity]] en [[#Aggregates]] samen en duiden ze eenzelfde object binnen het domein aan.
 
-### Bounded Context
+## Bounded Context
 De bounded context is de grens waarbinnen de semantiek van de [[#Ubiquitous language]] consistent is. 
 Dit impliceert dat wanneer men een andere betekenis aan een term binnen een bounded context geeft, men eigenlijk over een andere context aan het spreken is.
 
@@ -64,8 +68,12 @@ De tekening en diagrammen die gebruikt worden om tot een domeinmodel te komen zi
 ## Strategical Design
 Strategisch design is het in grote lijnen opstellen van het domeinmodel. In deze stap worden [[#Bounded Context]]s en de [[#Ubiquitous language]] vastgelegd.
 
-Het businessdomein/probleemdomein bestaat vanwege zijn omvang vaak uit meerdere *subdomains*. Zo'n subdomein is vaak een specifiek vak -of expertisegebied. Een van de subdomeinen is het belangrijkste voor de core business en wordt het **core domain** genoemd. De andere subdomeinen zijn van minder strategisch belang voor het bedrijf.
-Er zijn twee soorten subdomeinen:
+Het businessdomein/probleemdomein bestaat vanwege zijn omvang vaak uit meerdere *subdomains*. Zo'n subdomein is vaak een specifiek vak -of expertisegebied.
+Een van de subdomeinen is het belangrijkste voor de core business en wordt het **core domain** genoemd. ^core-domain
+
+De andere subdomeinen zijn van minder strategisch belang voor het bedrijf.
+
+Er zijn twee soorten subdomeinen: 
 - **Supporting**: vereist custom development omdat er geen off-the-shelf oplossing bestaat. Zal echter niet dezelfde investering vereisen als het *core domain*
 - **Generic**: is beschikbaar als off-the-shelf oplossing, of kan outsourced worden.
 
@@ -90,8 +98,20 @@ Bij tactical design worden de details van het domeinmodel ingevuld.
 
 ## Problem Space - Solution Space
 De *problem space* is waar men op hoog niveau strategische analyses doet en de constraints van het project vastlegt.
-In de *solution space* implementeer je dat deel van je domein wat in de de problem space als het *core domain* werd aangeduid.
+In de *solution space* implementeer je dat deel van je domein wat in de de problem space als het [[#^core-domain]] werd aangeduid.
+
+# DDD in praktijk
+
+## Aggregates kiezen
+Aggregates zijn liefst zo klein mogelijk (zie [[#Aggregates]]), maar hoe bepalen we dan precies hoe klein? Volgende stappen kunnen helpen:
+1. Start elke aggregate met maar 1 entity. Die zal dan ook de root zijn. Geef elk van de entiteiten de attributen die er het best bij passen.
+2. Vraag voor elke aggregate de domeinexperten of bij aanpassingen eraan ook andere entiteiten mee aangepast moeten worden. Maak per aggregate een lijst van alle entiteiten die mee veranderen.
+3. Vraag nu voor elk element op die lijst hoe snel de reactie op een aanpassing moet gebeuren.
+	1. Entiteiten die direct moeten aanpassen komen binnen de aggregate
+	2. Entiteiten die later aangepast mogen worden, worden aparte aggregates.
+
+Let op dat business niet zegt dat altijd alles direct aangepast moet worden. Dit lijkt interessant maar zorgt er ook voor dat transacties heel groot zullen worden (grote kans op falen, hoog geheugengebruik...)
 
 # Bronnen
-- Secure by Design, Dan Bergh Johnsson
-- Domain-Driven Design Distilled -Vaughn Vernon
+- Secure by Design - Dan Bergh Johnsson
+- Domain-Driven Design Distilled - Vaughn Vernon
